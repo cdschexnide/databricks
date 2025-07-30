@@ -1,0 +1,29 @@
+Start
+  ↓
+Load Config (.env file)
+  ↓
+Validate Required Settings
+  ↓
+Create Databricks Client
+  ↓
+Test Connection (API call)
+  ↓
+Initialize BLADE Adapter
+  ↓
+Process Command Line Args
+  ↓
+Prepare Ingestion Request
+  ├─ Load JSON file
+  ├─ Map to table name
+  └─ Set metadata
+  ↓
+Execute Ingestion
+  ├─ Create table if needed
+  ├─ Parse JSON records
+  ├─ Generate INSERT SQL
+  ├─ Execute on warehouse
+  └─ Validate results
+  ↓
+Display Results
+  ↓
+End

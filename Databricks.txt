@@ -1,0 +1,4 @@
+Databricks' data organization system
+- Catalog = Top-level container (like "blade_poc")
+- Schema = Database within catalog (like "logistics")
+- Table = Actual data tables  

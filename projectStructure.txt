@@ -1,0 +1,15 @@
+BLADE DATABRICKS INGESTION POC - PROJECT STRUCTURE
+
+cmd/main.go                        # Application entry point - orchestrates everything
+
+internal/config/config.go          # Loads environment variables (.env file)
+
+internal/databricks/
+├── client.go                      # Connects to Databricks using SDK
+├── ingestion.go                   # Core logic: JSON → SQL INSERT statements  
+└── models.go                      # Data structures (IngestionRequest, IngestionResult)
+
+internal/blade/
+├── adapter.go                     # Maps BLADE data types to Databricks tables
+└── models.go                      # BLADE data type definitions and mappings
+
