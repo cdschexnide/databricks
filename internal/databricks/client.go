@@ -38,7 +38,12 @@ func NewClient(cfg *config.Config) (*Client, error) {
 // receiver function for the Client struct, tests Databricks connection
 // takes in context, returns error
 func (c *Client) TestConnection(ctx context.Context) error {
-	err := c.workspace.Warehouses.List(ctx, sql.ListWarehousesRequest{})
+	// Original broken code:
+	// err := c.workspace.Warehouses.List(ctx, sql.ListWarehousesRequest{})
+	
+	// Fixed: List() returns an iterator, need to iterate through it to test connection
+	warehouses := c.workspace.Warehouses.List(ctx, sql.ListWarehousesRequest{})
+	_, err := warehouses.Next(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to connect to Databricks: %w", err)
 	}
@@ -69,6 +74,8 @@ func (c *Client) ensureTableExists(ctx context.Context, req *IngestionRequest) e
 	`, c.catalog, c.schema, req.TableName, req.Metadata["data_type"])
 
 	// ExecuteStatement -> SDK method to run SQL
+	// Original broken timeout:
+	// WaitTimeout: "60s", // This was outside the allowed range of 5s-50s
 	_, err := c.workspace.StatementExecution.ExecuteStatement(
 		ctx,
 		sql.ExecuteStatementRequest{
@@ -76,7 +83,7 @@ func (c *Client) ensureTableExists(ctx context.Context, req *IngestionRequest) e
 			WarehouseId: c.warehouseID,
 			Catalog:     c.catalog,
 			Schema:      c.schema,
-			WaitTimeout: "60s",
+			WaitTimeout: "30s", // Fixed: within allowed range of 5s-50s
 		},
 	)
 
@@ -90,6 +97,8 @@ func (c *Client) ensureTableExists(ctx context.Context, req *IngestionRequest) e
 
 // executeSQL executes a SQL statement and returns the response
 func (c *Client) executeSQL(ctx context.Context, sqlStatement string) (*sql.StatementResponse, error) {
+	// Original broken timeout:
+	// WaitTimeout: "300s", // This was outside the allowed range of 5s-50s
 	return c.workspace.StatementExecution.ExecuteStatement(
 		ctx,
 		sql.ExecuteStatementRequest{
@@ -97,7 +106,7 @@ func (c *Client) executeSQL(ctx context.Context, sqlStatement string) (*sql.Stat
 			WarehouseId: c.warehouseID,
 			Catalog:     c.catalog,
 			Schema:      c.schema,
-			WaitTimeout: "300s", // 5 minutes for large operations
+			WaitTimeout: "50s", // Fixed: maximum allowed timeout
 		},
 	)
 }
@@ -109,6 +118,8 @@ func (c *Client) getRowCount(ctx context.Context, tableName string) (int64, erro
 	countSQL := fmt.Sprintf("SELECT COUNT(*) as row_count FROM %s.%s.%s", 
 		c.catalog, c.schema, tableName)
 
+	// Original timeout was correct but adding comment for consistency:
+	// WaitTimeout: "30s", // This is within the allowed range of 5s-50s
 	_, err := c.workspace.StatementExecution.ExecuteStatement(
 		ctx,
 		sql.ExecuteStatementRequest{
@@ -116,16 +127,14 @@ func (c *Client) getRowCount(ctx context.Context, tableName string) (int64, erro
 			WarehouseId: c.warehouseID,
 			Catalog:     c.catalog,
 			Schema:      c.schema,
-			WaitTimeout: "30s",
+			WaitTimeout: "30s", // Already within allowed range of 5s-50s
 		},
 	)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to get row count: %w", err)
 	}
-
-	// For POC purposes, we'll return the number of records we attempted to insert
-	// In a real implementation, you'd parse the result to get the actual count
+	
 	return 0, fmt.Errorf("row count validation not fully implemented in POC")
 }
 

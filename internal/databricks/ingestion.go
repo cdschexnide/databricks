@@ -123,6 +123,8 @@ func (c *Client) insertMockData(ctx context.Context, req *IngestionRequest) (int
 		strings.Join(values, ",\n")) 
 
 	// sends SQL to Databricks
+	// Original broken timeout:
+	// WaitTimeout: "60s", // This was outside the allowed range of 5s-50s
 	_, err := c.workspace.StatementExecution.ExecuteStatement(
 		ctx,
 		sql.ExecuteStatementRequest{ 
@@ -130,7 +132,7 @@ func (c *Client) insertMockData(ctx context.Context, req *IngestionRequest) (int
 			WarehouseId: c.warehouseID,  
 			Catalog:     c.catalog,     
 			Schema:      c.schema,       
-			WaitTimeout: "60s",   
+			WaitTimeout: "30s", // Fixed: within allowed range of 5s-50s
 		},
 	)
 
